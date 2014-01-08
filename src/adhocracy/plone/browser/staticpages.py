@@ -57,7 +57,7 @@ def query_items(root, path, query={}):
 class StaticPagesView(BrowserView):
 
     def _get_validated_data(self):
-        path = ''
+        base = ''
         lang = ''
         data = self._get_data()
         # validate lang parameter
@@ -65,14 +65,14 @@ class StaticPagesView(BrowserView):
             if key == 'lang' and value in self.context:
                 lang = value.strip('/')
                 break
-        # validate path parameter
+        # validate base parameter
         for key, value in data:
-            if key == 'path':
-                path = value.strip('/')
+            if key == 'base':
+                base = value.strip('/')
                 break
         if lang == '':
             raise KeyError
-        return (path, lang)
+        return (base, lang)
 
     def _get_data(self):
         items = self.request.get("QUERY_STRING", "").split("&")
@@ -83,8 +83,8 @@ class StaticPagesView(BrowserView):
         self.request.response.setHeader('Content-Type',
                                         'application/json;;charset="utf-8"')
         try:
-            path, lang = self._get_validated_data()
-            response_data = query_items(self.context, '/'.join([lang, path]))
+            base, lang = self._get_validated_data()
+            response_data = query_items(self.context, '/'.join([lang, base]))
             return json.dumps(response_data)
         except KeyError:
             self.request.response.setStatus(400)

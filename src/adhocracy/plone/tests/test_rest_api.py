@@ -108,14 +108,14 @@ class StaticPagesRESTAPIFunctionalTests(unittest.TestCase):
         self.assertEqual(response.getStatus(), 200)
         self.assertEqual(json.loads(response_body), wanted)
 
-    def test_staticpages_valid_with_lang_and_children_and_path(self):
+    def test_staticpages_valid_with_lang_and_children_and_base(self):
         self.portal.invokeFactory('Folder', 'de', title=u"de uebersetzungen")
         self.portal["de"].invokeFactory('Folder', 'parent1', title=u"parent1")
         self.portal["de"]["parent1"].invokeFactory('Document', 'child1',
                                                    title=u"child1",
                                                    body=u"body child1")
 
-        self.request["QUERY_STRING"] = 'lang=de&path=parent1/child1'
+        self.request["QUERY_STRING"] = 'lang=de&base=parent1/child1'
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
@@ -126,14 +126,14 @@ class StaticPagesRESTAPIFunctionalTests(unittest.TestCase):
         self.assertEqual(response.getStatus(), 200)
         self.assertEqual(json.loads(response_body), wanted)
 
-    def test_staticpages_nonvalid_with_lang_and_children_and_wrong_path(self):
+    def test_staticpages_nonvalid_with_lang_and_children_and_wrong_base(self):
         self.portal.invokeFactory('Folder', 'de', title=u"de uebersetzungen")
         self.portal["de"].invokeFactory('Folder', 'parent1', title=u"parent1")
         self.portal["de"]["parent1"].invokeFactory('Document', 'child1',
                                                    title=u"child1",
                                                    body=u"body child1")
 
-        self.request["QUERY_STRING"] = 'lang=de&path=WRONG'
+        self.request["QUERY_STRING"] = 'lang=de&base=WRONG'
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
