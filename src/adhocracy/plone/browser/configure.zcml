@@ -1,0 +1,16 @@
+<configure
+  xmlns="http://namespaces.zope.org/zope"
+  xmlns:five="http://namespaces.zope.org/five"
+  xmlns:browser="http://namespaces.zope.org/browser"
+  i18n_domain="adhocracy.plone">
+
+  <!-- views -->
+  <browser:page
+    name="staticpages"
+    for="plone.app.layout.navigation.interfaces.INavigationRoot"
+    permission="zope.Public"
+    class=".staticpages.StaticPagesView"
+    layer="adhocracy.plone.interfaces.IAddOnInstalled"
+  />
+
+</configure>
