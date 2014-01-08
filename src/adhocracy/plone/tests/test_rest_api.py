@@ -36,24 +36,26 @@ class StaticPagesRESTAPIFunctionalTests(unittest.TestCase):
 
         self.assertEqual(response.getHeader('content-type'),
                          'application/json;;charset="utf-8"')
-        self.assertEqual(response_body, u"")
+        self.assertIn('errors', json.loads(response_body))
 
     def test_staticpages_nonvalid_missing_lang(self):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
-        view()
+        response_body = view()
         response = view.request.response
         self.assertEqual(response.getStatus(), 400)
+        self.assertIn("errors", json.loads(response_body))
 
     def test_staticpages_nonvalid_wrong_lang(self):
         self.request["QUERY_STRING"] = 'lang=WRONG'
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        view()
+        response_body = view()
         response = view.request.response
 
         self.assertEqual(response.getStatus(), 400)
+        self.assertIn("errors", json.loads(response_body))
 
     def test_staticpages_valid_with_lang_no_children(self):
         self.portal.invokeFactory('Folder', 'de', title=u"de uebersetzungen")
@@ -141,4 +143,5 @@ class StaticPagesRESTAPIFunctionalTests(unittest.TestCase):
         response = view.request.response
 
         self.assertEqual(response.getStatus(), 400)
-        self.assertEqual(response_body, u"")
+        self.assertIn("errors", json.loads(response_body))
+

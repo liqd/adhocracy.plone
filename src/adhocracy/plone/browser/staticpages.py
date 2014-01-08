@@ -88,4 +88,4 @@ class StaticPagesView(BrowserView):
             return json.dumps(response_data)
         except KeyError:
             self.request.response.setStatus(400)
-            return u''
+            return json.dumps({'errors': []})
