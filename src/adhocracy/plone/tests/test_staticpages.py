@@ -240,6 +240,7 @@ class StaticPagesSingleViewIntegrationTests(unittest.TestCase):
         self.assertEqual(response_data["path"], u'parent1/child1')
         self.assertEqual(response_data["lang"], u'de')
         self.assertTrue(response_data["nav"].startswith(u'<ul'))
+        self.assertEqual(response_data["column_right"], u'')
         self.assertEqual(response_data["description"], u'üdescription')
         self.assertEqual(response_data["private"], False)
 
