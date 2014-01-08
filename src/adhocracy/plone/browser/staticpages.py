@@ -1,12 +1,11 @@
-import json
-from plone.app.layout.navigation.navtree import buildFolderTree
-from plone.app.layout.navigation.navtree import NavtreeStrategyBase
-from Products.CMFPlone.browser.navtree import SitemapNavtreeStrategy, DefaultNavtreeStrategy
-
 from AccessControl.unauthorized import Unauthorized
-from zope.traversing.interfaces import TraversalError
+from bs4 import BeautifulSoup
 from Products.Five.browser import BrowserView
-import plone.api
+from Products.CMFPlone.browser.navtree import DefaultNavtreeStrategy
+from plone.app.layout.navigation.navtree import buildFolderTree
+from zope.traversing.interfaces import TraversalError
+
+import json
 
 
 def query_items(root, path, query={}):
@@ -56,7 +55,7 @@ def query_items(root, path, query={}):
 
 class StaticPagesView(BrowserView):
 
-    def _get_validated_data(self):
+    def _staticpages_validated_data(self):
         base = ''
         lang = ''
         data = self._get_data()
@@ -74,18 +73,125 @@ class StaticPagesView(BrowserView):
             raise KeyError
         return (base, lang)
 
+    def _staticpages_single_validated_data(self):
+        path = ''
+        lang = ''
+        data = self._get_data()
+        # validate lang parameter
+        for key, value in data:
+            if key == 'lang' and value in self.context:
+                lang = value.strip('/')
+                break
+        # validate path parameter
+        for key, value in data:
+            if key == 'path':
+                path = value.strip('/')
+                break
+        if lang == '' or path == '':
+            raise KeyError
+        return (path, lang)
+
     def _get_data(self):
         items = self.request.get("QUERY_STRING", "").split("&")
         data = [tuple(item.split("=")) for item in items if "=" in item]
         return data
 
-    def __call__(self):
+    def staticpages(self):
+        """staticpages View
+
+        Context: INavigationRoot content
+
+        Get parameter:
+
+            * lang: language folder, multiple allowed to set fallback, required
+            * base: path to root item relative to the lang folder
+
+        Traverse to the content under lang/base and return navtree dictionary
+        of all children.
+
+        @return: JSON dictio nary with navtree information
+
+        """
         self.request.response.setHeader('Content-Type',
                                         'application/json;;charset="utf-8"')
         try:
-            base, lang = self._get_validated_data()
+            base, lang = self._staticpages_validated_data()
             response_data = query_items(self.context, '/'.join([lang, base]))
             return json.dumps(response_data)
         except KeyError:
             self.request.response.setStatus(400)
             return json.dumps({'errors': []})
+
+    def staticpages_single(self):
+        """saticpages/single View
+
+        Context: INavigationRoot content
+
+        Get parameter:
+
+            * lang: language folder, multiple allowed to set fallback, required
+            * path: path to item relative to the lang folder
+
+        Traverse to the content under lang/path and return the rendered html
+        of the default view.
+
+        @return: JSON dictionary with html representation
+
+        """
+        self.request.response.setHeader('Content-Type',
+                                        'application/json;;charset="utf-8"')
+        item = None
+        data = {}
+        try:
+            path, lang = self._staticpages_single_validated_data()
+            item = self.context.restrictedTraverse("/".join([lang, path]))
+        except (KeyError, AttributeError, Unauthorized, TraversalError):
+            self.request.response.setStatus(400)
+            return json.dumps({'errors': []})
+
+        data['lang'] = lang
+        data['path'] = path
+        data['private'] = False
+
+        viewname = item.getLayout() or item.getDefaultLayout()
+        item_html = item.restrictedTraverse(viewname)()
+        soup = BeautifulSoup(item_html)
+
+        column_r_soup = soup.find(id='portal-column-two')
+        data['column_right'] = column_r_soup.encode('utf-8').strip()\
+            if column_r_soup else u''
+        nav_soup = soup.find(id='portal-globalnav')
+        data['nav'] = nav_soup.encode('utf-8').strip()\
+            if nav_soup else u''
+
+        content_soup = soup.find(id="content")
+        remove_ids = ['viewlet-below-content-title',
+                      'viewlet-above-content-title',
+                      'plone-document-byline']
+        for id_ in remove_ids:
+            tag = content_soup.find(id=id_)
+            if tag:
+                tag.extract()
+        title_soup = content_soup.find(class_='documentFirstHeading')\
+            if content_soup else None
+        data['title'] = title_soup.extract().get_text().strip()\
+            if title_soup else u''
+        descr_soup = content_soup.find(class_='documentDescription')\
+            if content_soup else None
+        data['description'] = descr_soup.extract().get_text().strip()\
+            if descr_soup else u''
+        data['body'] = content_soup.encode("utf-8").strip()\
+            if content_soup else u''
+
+        return json.dumps(data)
+
+    def __call__(self):
+        """default rendering for staticpages"""
+        return self.staticpages()
+
+    def __getitem__(self, name):
+        """custom traversal to allow to render staticpages/single"""
+        if name != "single":
+            raise KeyError
+        else:
+            return self.staticpages_single

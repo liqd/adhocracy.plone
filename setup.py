@@ -41,6 +41,7 @@ setup(name='adhocracy.plone',
       zip_safe=False,
       install_requires=[
           'setuptools',
+          'beautifulsoup4',
           'plone.api',
           # -*- Extra requirements: -*-
       ],
