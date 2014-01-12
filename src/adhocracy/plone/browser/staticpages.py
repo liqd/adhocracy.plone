@@ -150,13 +150,14 @@ class StaticPagesView(BrowserView):
             return json.dumps({'errors': []})
 
         data['lang'] = lang
-        data['path'] = path
         data['private'] = False
 
         viewname = item.getLayout() or item.getDefaultLayout()
         item_html = item.restrictedTraverse(viewname)()
         soup = BeautifulSoup(item_html)
 
+        css_classes_soup = soup.body['class']
+        data['css_classes'] = css_classes_soup if css_classes_soup else []
         column_r_soup = soup.find(id='portal-column-two')
         data['column_right'] = column_r_soup.encode('utf-8').strip()\
             if column_r_soup else u''
