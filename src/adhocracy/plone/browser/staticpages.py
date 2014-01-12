@@ -138,8 +138,6 @@ class StaticPagesView(BrowserView):
         @return: JSON dictionary with html representation
 
         """
-        self.request.response.setHeader('Content-Type',
-                                        'application/json;;charset="utf-8"')
         item = None
         data = {}
         try:
@@ -147,6 +145,8 @@ class StaticPagesView(BrowserView):
             item = self.context.restrictedTraverse("/".join([lang, path]))
         except (KeyError, AttributeError, Unauthorized, TraversalError):
             self.request.response.setStatus(400)
+            self.request.response.setHeader('Content-Type', 'application/json;'
+                                            ';charset="utf-8"')
             return json.dumps({'errors': []})
 
         data['lang'] = lang
@@ -183,6 +183,8 @@ class StaticPagesView(BrowserView):
         data['body'] = content_soup.encode("utf-8").strip()\
             if content_soup else u''
 
+        self.request.response.setHeader('Content-Type',
+                                        'application/json;;charset="utf-8"')
         return json.dumps(data)
 
     def __call__(self):
