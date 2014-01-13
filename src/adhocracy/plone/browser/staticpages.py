@@ -6,6 +6,7 @@ from plone.app.layout.navigation.navtree import buildFolderTree
 from zope.traversing.interfaces import TraversalError
 
 import json
+import urllib
 
 
 def query_items(root, path, query={}):
@@ -62,12 +63,12 @@ class StaticPagesView(BrowserView):
         # validate lang parameter
         for key, value in data:
             if key == 'lang' and value in self.context:
-                lang = value.strip('/')
+                lang = urllib.unquote(value).strip('/') 
                 break
         # validate base parameter
         for key, value in data:
             if key == 'base':
-                base = value.strip('/')
+                base = urllib.unquote(value).strip('/')
                 break
         if lang == '':
             raise KeyError
@@ -80,12 +81,12 @@ class StaticPagesView(BrowserView):
         # validate lang parameter
         for key, value in data:
             if key == 'lang' and value in self.context:
-                lang = value.strip('/')
+                lang = urllib.unquote(value).strip('/')
                 break
         # validate path parameter
         for key, value in data:
             if key == 'path':
-                path = value.strip('/')
+                path = urllib.unquote(value).strip('/')
                 break
         if lang == '' or path == '':
             raise KeyError
