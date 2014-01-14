@@ -1,8 +1,12 @@
 from AccessControl.unauthorized import Unauthorized
-from bs4 import BeautifulSoup
+from Acquisition import aq_base
+from Acquisition import aq_inner
 from Products.Five.browser import BrowserView
 from Products.CMFPlone.browser.navtree import DefaultNavtreeStrategy
+from bs4 import BeautifulSoup
 from plone.app.layout.navigation.navtree import buildFolderTree
+from zope.component import getMultiAdapter
+from zope.component import ComponentLookupError 
 from zope.traversing.interfaces import TraversalError
 
 import json
@@ -152,9 +156,19 @@ class StaticPagesView(BrowserView):
 
         data['lang'] = lang
         data['private'] = False
-
-        viewname = item.getLayout() or item.getDefaultLayout()
-        item_html = item.restrictedTraverse(viewname)()
+	
+	item = aq_inner(item)
+	default_page = getattr(aq_base(item), 'default_page', False) 
+	if default_page:
+		item = item[default_page]
+	viewname =  item.getLayout() or item.getDefaultLayout()
+	view = None
+	try:
+	    view = getMultiAdapter((item, self.request), name=viewname)
+	except ComponentLookupError:
+	    import pdb;pdb.set_trace()
+	    view = item.restrictedTraverse("view")
+	item_html = view.__of__(item)()
         soup = BeautifulSoup(item_html)
 
         css_classes_soup = soup.body['class']
@@ -167,9 +181,7 @@ class StaticPagesView(BrowserView):
             if nav_soup else u''
 
         content_soup = soup.find(id="content")
-        remove_ids = ['viewlet-below-content-title',
-                      'viewlet-above-content-title',
-                      'plone-document-byline']
+        remove_ids = ['plone-document-byline']
         for id_ in remove_ids:
             tag = content_soup.find(id=id_)
             if tag:
