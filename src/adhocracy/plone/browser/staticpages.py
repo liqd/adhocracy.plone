@@ -166,7 +166,6 @@ class StaticPagesView(BrowserView):
 	try:
 	    view = getMultiAdapter((item, self.request), name=viewname)
 	except ComponentLookupError:
-	    import pdb;pdb.set_trace()
 	    view = item.restrictedTraverse("view")
 	item_html = view.__of__(item)()
         soup = BeautifulSoup(item_html)
