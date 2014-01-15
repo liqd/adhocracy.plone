@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from lxml import etree
 from plone.app.layout.navigation.navtree import buildFolderTree
 from plone.app.blocks.tiles import renderTiles
+from plone.app.contenttypes.interfaces import ILink
 from zope.component import getMultiAdapter
 from zope.component import ComponentLookupError
 from zope.traversing.interfaces import TraversalError
@@ -145,6 +146,7 @@ class StaticPagesView(BrowserView):
         """
         item = None
         view = None
+        link = None
         data = {}
         try:
             path, lang = self._staticpages_single_validated_data()
@@ -152,6 +154,9 @@ class StaticPagesView(BrowserView):
                 view = self.context.restrictedTraverse(path)
             else:
                 item = self.context.restrictedTraverse("/".join([lang, path]))
+            if ILink.providedBy(item):
+                link = item
+                item = None
         except (KeyError, AttributeError, Unauthorized, TraversalError):
             self.request.response.setStatus(400)
             self.request.response.setHeader('Content-Type', 'application/json;'
@@ -163,6 +168,19 @@ class StaticPagesView(BrowserView):
 
         html = ''
         tree = None
+        redirect_url = u''
+        if link:
+            portal_state = link.restrictedTraverse("@@plone_portal_state")
+            if "${navigation_root_url}" in link.remoteUrl:
+                navigation_root_url = portal_state.navigation_root_url()
+                redirect_url = link.remoteUrl.replace("${navigation_root_url}",
+                                                      navigation_root_url)
+            elif "${portal_url}" in link.remoteUrl:
+                portal_url = portal_state.portal_url()
+                redirect_url = link.remoteUrl.replace("${portal_url}",
+                                                      portal_url)
+            else:
+                redirect_url = link.remoteUrl
         if view:
             html = view()
         if item:
@@ -190,7 +208,7 @@ class StaticPagesView(BrowserView):
 
         soup = BeautifulSoup(html)
 
-        css_classes_soup = soup.body['class']
+        css_classes_soup = soup.body['class'] if soup.body else None
         data['css_classes'] = css_classes_soup if css_classes_soup else []
         column_r_soup = soup.find(id='portal-column-two')
         data['column_right'] = column_r_soup.encode('utf-8').strip()\
@@ -202,7 +220,7 @@ class StaticPagesView(BrowserView):
         content_soup = soup.find(id="content")
         remove_ids = ['plone-document-byline']
         for id_ in remove_ids:
-            tag = content_soup.find(id=id_)
+            tag = content_soup.find(id=id_) if content_soup else None
             if tag:
                 tag.extract()
         title_soup = content_soup.find(class_='documentFirstHeading')\
@@ -215,6 +233,7 @@ class StaticPagesView(BrowserView):
             if descr_soup else u''
         data['body'] = content_soup.encode("utf-8").strip()\
             if content_soup else u''
+        data['redirect_url'] = redirect_url
 
         self.request.response.setHeader('Content-Type',
                                         'application/json;;charset="utf-8"')

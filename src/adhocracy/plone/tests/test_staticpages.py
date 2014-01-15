@@ -241,6 +241,7 @@ class StaticPagesSingleViewIntegrationTests(unittest.TestCase):
         self.assertTrue(response_data["nav"].startswith(u'<ul'))
         self.assertEqual(len(response_data["css_classes"]), 10)
         self.assertEqual(response_data["column_right"], u'')
+        self.assertEqual(response_data["redirect_url"], u'')
         self.assertEqual(response_data["description"], u'üdescription')
         self.assertEqual(response_data["private"], False)
 

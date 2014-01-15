@@ -43,6 +43,8 @@ setup(name='adhocracy.plone',
           'setuptools',
           'beautifulsoup4',
           'plone.api',
+          'plone.app.contenttypes',
+          'plone.app.blocks',
           # -*- Extra requirements: -*-
       ],
       extras_require={'test': ['plone.app.testing']},
