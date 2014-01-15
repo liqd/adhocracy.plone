@@ -157,17 +157,21 @@ class StaticPagesView(BrowserView):
         data['lang'] = lang
         data['private'] = False
 	
-	item = aq_inner(item)
-	default_page = getattr(aq_base(item), 'default_page', False) 
-	if default_page:
-		item = item[default_page]
+	default_page_view = getMultiAdapter((item, self.request), name="default_page") 
+	default_page = default_page_view.getDefaultPage()
+        item = item[default_page] if default_page else item
+
 	viewname =  item.getLayout() or item.getDefaultLayout()
 	view = None
 	try:
 	    view = getMultiAdapter((item, self.request), name=viewname)
 	except ComponentLookupError:
-	    view = item.restrictedTraverse("view")
-	item_html = view.__of__(item)()
+	    viewname = 'view'
+	    view = getMultiAdapter((item, self.request), name=viewname)
+	view.request.URL = item.absolute_url() + "/" + viewname
+	view.request.response.setHeader('Content-Type', 'text/html')
+	item_html = view()
+	
         soup = BeautifulSoup(item_html)
 
         css_classes_soup = soup.body['class']
