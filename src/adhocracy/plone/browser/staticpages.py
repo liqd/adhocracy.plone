@@ -3,12 +3,14 @@ from Acquisition import aq_base
 from Acquisition import aq_inner
 from Products.Five.browser import BrowserView
 from Products.CMFPlone.browser.navtree import DefaultNavtreeStrategy
+from StringIO import StringIO
 from bs4 import BeautifulSoup
+from lxml import etree
 from plone.app.layout.navigation.navtree import buildFolderTree
+from plone.app.blocks.tiles import renderTiles
 from zope.component import getMultiAdapter
-from zope.component import ComponentLookupError 
+from zope.component import ComponentLookupError
 from zope.traversing.interfaces import TraversalError
-
 import json
 import urllib
 
@@ -67,7 +69,7 @@ class StaticPagesView(BrowserView):
         # validate lang parameter
         for key, value in data:
             if key == 'lang' and value in self.context:
-                lang = urllib.unquote(value).strip('/') 
+                lang = urllib.unquote(value).strip('/')
                 break
         # validate base parameter
         for key, value in data:
@@ -156,23 +158,30 @@ class StaticPagesView(BrowserView):
 
         data['lang'] = lang
         data['private'] = False
-	
-	default_page_view = getMultiAdapter((item, self.request), name="default_page") 
-	default_page = default_page_view.getDefaultPage()
+
+        default_page_view = getMultiAdapter((item, self.request),
+                                            name="default_page")
+        default_page = default_page_view.getDefaultPage()
         item = item[default_page] if default_page else item
 
-	viewname =  item.getLayout() or item.getDefaultLayout()
-	view = None
-	try:
-	    view = getMultiAdapter((item, self.request), name=viewname)
-	except ComponentLookupError:
-	    viewname = 'view'
-	    view = getMultiAdapter((item, self.request), name=viewname)
-	view.request.URL = item.absolute_url() + "/" + viewname
-	view.request.response.setHeader('Content-Type', 'text/html')
-	item_html = view()
-	
-        soup = BeautifulSoup(item_html)
+        viewname = item.getLayout() or item.getDefaultLayout()
+        view = None
+        try:
+            view = getMultiAdapter((item, self.request), name=viewname)
+        except ComponentLookupError:
+            viewname = 'view'
+            view = getMultiAdapter((item, self.request), name=viewname)
+        view.request.URL = item.absolute_url() + "/" + viewname
+        view.request.response.setHeader('Content-Type', 'text/html')
+        view.request['plone.app.blocks.enabled'] = True
+        item_html = view()
+        parser = etree.HTMLParser()
+        tree = etree.parse(StringIO(item_html), parser)
+        renderTiles(view.request, tree)
+        item_html_tiles = etree.tostring(tree.getroot(), method="html",
+                                         pretty_print=True)
+
+        soup = BeautifulSoup(item_html_tiles)
 
         css_classes_soup = soup.body['class']
         data['css_classes'] = css_classes_soup if css_classes_soup else []
