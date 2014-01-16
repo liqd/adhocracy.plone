@@ -37,7 +37,7 @@ class StaticPagesViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages()
+        response_body = view()
         response = view.request.response
 
         self.assertEqual(response.getHeader('content-type'),
@@ -47,7 +47,7 @@ class StaticPagesViewIntegrationTests(unittest.TestCase):
     def test_nonvalid_missing_lang(self):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
-        response_body = view.staticpages()
+        response_body = view()
         response = view.request.response
         self.assertEqual(response.getStatus(), 400)
         self.assertIn("errors", json.loads(response_body))
@@ -57,7 +57,7 @@ class StaticPagesViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages()
+        response_body = view()
         response = view.request.response
 
         self.assertEqual(response.getStatus(), 400)
@@ -69,7 +69,7 @@ class StaticPagesViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages()
+        response_body = view()
         response = view.request.response
 
         wanted = {"title": "de uebersetzungen", "children": [], "name": "de"}
@@ -82,7 +82,7 @@ class StaticPagesViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages()
+        response_body = view()
         response = view.request.response
 
         wanted = {"title": "de uebersetzungen", "children": [], "name": "de"}
@@ -102,7 +102,7 @@ class StaticPagesViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages()
+        response_body = view()
         response = view.request.response
 
         wanted = {u'title': u'de übersetzungen', u'name': u'de',
@@ -128,7 +128,7 @@ class StaticPagesViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages()
+        response_body = view()
         response = view.request.response
 
         wanted = {u'title': 'child1', u'name': 'child1', u'children': []}
@@ -146,7 +146,7 @@ class StaticPagesViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages()
+        response_body = view()
         response = view.request.response
 
         self.assertEqual(response.getStatus(), 400)
@@ -177,7 +177,7 @@ class StaticPagesSingleViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages_single()
+        response_body = view['single']()
         response = view.request.response
 
         self.assertEqual(response.getHeader('content-type'),
@@ -187,7 +187,7 @@ class StaticPagesSingleViewIntegrationTests(unittest.TestCase):
     def test_nonvalid_missing_lang(self):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
-        response_body = view.staticpages_single()
+        response_body = view['single']()
         response = view.request.response
         self.assertEqual(response.getStatus(), 400)
         self.assertIn("errors", json.loads(response_body))
@@ -197,7 +197,7 @@ class StaticPagesSingleViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages_single()
+        response_body = view['single']()
         response = view.request.response
 
         self.assertEqual(response.getStatus(), 400)
@@ -208,7 +208,7 @@ class StaticPagesSingleViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages_single()
+        response_body = view['single']()
         response = view.request.response
 
         self.assertEqual(response.getStatus(), 400)
@@ -219,7 +219,7 @@ class StaticPagesSingleViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages_single()
+        response_body = view['single']()
         response = view.request.response
 
         self.assertEqual(response.getStatus(), 400)
@@ -230,7 +230,7 @@ class StaticPagesSingleViewIntegrationTests(unittest.TestCase):
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        response_body = view.staticpages_single()
+        response_body = view['single']()
         response = view.request.response
 
         self.assertEqual(response.getStatus(), 200)
@@ -245,12 +245,42 @@ class StaticPagesSingleViewIntegrationTests(unittest.TestCase):
         self.assertEqual(response_data["description"], u'üdescription')
         self.assertEqual(response_data["private"], False)
 
-    def test_valid_with_fallback_lang_and_path(self):
+    def test_valid_with_wrong_lang_fallback_and_path(self):
+        portal = self.portal
+        portal.invokeFactory('Folder', 'en', title=u"en uebersetzungen")
+        portal["en"].invokeFactory('Folder', 'parent1', title=u"parent1")
+        portal["en"]["parent1"].invokeFactory('Document', 'child1',
+                                              title=u"child1",)
+
         self.request["QUERY_STRING"] = 'lang=WRONG&lang=de&path=parent1/child1'
         view = getMultiAdapter((self.portal, self.request),
                                name=u"staticpages")
 
-        view.staticpages_single()
+        view['single']()
+        response = view.request.response
+
+        self.assertEqual(response.getStatus(), 200)
+
+    def test_valid_with_wrong_lang_fallback_and_wrong_path(self):
+        portal = self.portal
+        portal.invokeFactory('Folder', 'en', title=u"en uebersetzungen")
+        portal["en"].invokeFactory('Folder', 'parent1', title=u"parent1")
+        self.request["QUERY_STRING"] = 'lang=WRONG&lang=de&path=parent1/child1'
+        view = getMultiAdapter((self.portal, self.request),
+                               name=u"staticpages")
+
+        view['single']()
+        response = view.request.response
+
+        self.assertEqual(response.getStatus(), 200)
+
+    def test_valid_with_lang_fallback_and_path(self):
+        self.request["QUERY_STRING"] = 'lang=NOTRANSLATION&'\
+                                       'lang=de&path=parent1/child1'
+        view = getMultiAdapter((self.portal, self.request),
+                               name=u"staticpages")
+
+        view['single']()
         response = view.request.response
 
         self.assertEqual(response.getStatus(), 200)

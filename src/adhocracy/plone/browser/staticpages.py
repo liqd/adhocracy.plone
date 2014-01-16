@@ -61,45 +61,15 @@ def query_items(root, path, query={}):
 
 class StaticPagesView(BrowserView):
 
-    def _staticpages_validated_data(self):
-        base = ''
-        lang = ''
-        data = self._get_data()
-        # validate lang parameter
-        for key, value in data:
-            if key == 'lang' and value in self.context:
-                lang = urllib.unquote(value).strip('/')
-                break
-        # validate base parameter
-        for key, value in data:
-            if key == 'base':
-                base = urllib.unquote(value).strip('/')
-                break
-        if lang == '':
-            raise KeyError
-        return (base, lang)
-
-    def _staticpages_single_validated_data(self):
-        path = ''
-        lang = ''
-        data = self._get_data()
-        # validate lang parameter
-        for key, value in data:
-            if key == 'lang' and value in self.context:
-                lang = urllib.unquote(value).strip('/')
-                break
-        # validate path parameter
-        for key, value in data:
-            if key == 'path':
-                path = urllib.unquote(value).strip('/')
-                break
-        if lang == '' or path == '':
-            raise KeyError
-        return (path, lang)
-
     def _get_data(self):
         items = self.request.get("QUERY_STRING", "").split("&")
-        data = [tuple(item.split("=")) for item in items if "=" in item]
+        data = {}
+        data_ = [tuple(item.split("=")) for item in items if "=" in item]
+        base = [(k, v) for k, v in data_ if k == 'base']
+        data['base'] = urllib.unquote(base[0][1]).strip('/') if base else ''
+        path = [(k, v) for k, v in data_ if k == 'path']
+        data['path'] = urllib.unquote(path[0][1]).strip('/') if path else ''
+        data['langs'] = [urllib.unquote(v) for k, v in data_ if k == 'lang']
         return data
 
     def staticpages(self):
@@ -118,15 +88,17 @@ class StaticPagesView(BrowserView):
         @return: JSON dictio nary with navtree information
 
         """
-        self.request.response.setHeader('Content-Type',
-                                        'application/json;;charset="utf-8"')
-        try:
-            base, lang = self._staticpages_validated_data()
-            response_data = query_items(self.context, '/'.join([lang, base]))
-            return json.dumps(response_data)
-        except KeyError:
-            self.request.response.setStatus(400)
-            return json.dumps({'errors': []})
+        data = self._get_data()
+        response_data = {}
+        for lang in data['langs']:
+            try:
+                response_data = query_items(self.context,
+                                            '/'.join([lang, data['base']]))
+            except KeyError:
+                continue
+        if data['langs'] == [] or response_data == {}:
+            raise KeyError
+        return response_data
 
     def staticpages_single(self):
         """saticpages/single View
@@ -147,24 +119,29 @@ class StaticPagesView(BrowserView):
         item = None
         view = None
         link = None
-        data = {}
-        try:
-            path, lang = self._staticpages_single_validated_data()
-            if path.startswith("author/"):
-                view = self.context.restrictedTraverse(path)
-            else:
-                item = self.context.restrictedTraverse("/".join([lang, path]))
-            if ILink.providedBy(item):
-                link = item
-                item = None
-        except (KeyError, AttributeError, Unauthorized, TraversalError):
-            self.request.response.setStatus(400)
-            self.request.response.setHeader('Content-Type', 'application/json;'
-                                            ';charset="utf-8"')
-            return json.dumps({'errors': []})
-
-        data['lang'] = lang
-        data['private'] = False
+        response_data = {}
+        lang = u''
+        data = self._get_data()
+        if data['langs'] == [] or data['path'] == '':
+            raise KeyError
+        if data['path'].startswith("author/")\
+                or data['path'].startswith("sitemap"):
+            view = self.context.restrictedTraverse(data['path'])
+        else:
+            for lang in data['langs']:
+                try:
+                    item = self.context\
+                        .restrictedTraverse("/".join([lang, data['path']]))
+                    lang = lang
+                except (KeyError, TraversalError):
+                    pass
+            if item is None:
+                raise KeyError
+        if ILink.providedBy(item):
+            link = item
+            item = None
+        response_data['lang'] = lang
+        response_data['private'] = False
 
         html = ''
         tree = None
@@ -209,12 +186,13 @@ class StaticPagesView(BrowserView):
         soup = BeautifulSoup(html)
 
         css_classes_soup = soup.body['class'] if soup.body else None
-        data['css_classes'] = css_classes_soup if css_classes_soup else []
+        response_data['css_classes'] = css_classes_soup\
+            if css_classes_soup else []
         column_r_soup = soup.find(id='portal-column-two')
-        data['column_right'] = column_r_soup.encode('utf-8').strip()\
+        response_data['column_right'] = column_r_soup.encode('utf-8').strip()\
             if column_r_soup else u''
         nav_soup = soup.find(id='portal-globalnav')
-        data['nav'] = nav_soup.encode('utf-8').strip()\
+        response_data['nav'] = nav_soup.encode('utf-8').strip()\
             if nav_soup else u''
 
         content_soup = soup.find(id="content")
@@ -225,27 +203,42 @@ class StaticPagesView(BrowserView):
                 tag.extract()
         title_soup = content_soup.find(class_='documentFirstHeading')\
             if content_soup else None
-        data['title'] = title_soup.extract().get_text().strip()\
+        response_data['title'] = title_soup.extract().get_text().strip()\
             if title_soup else u''
         descr_soup = content_soup.find(class_='documentDescription')\
             if content_soup else None
-        data['description'] = descr_soup.extract().get_text().strip()\
+        response_data['description'] = descr_soup.extract().get_text().strip()\
             if descr_soup else u''
-        data['body'] = content_soup.encode("utf-8").strip()\
+        response_data['body'] = content_soup.encode("utf-8").strip()\
             if content_soup else u''
-        data['redirect_url'] = redirect_url
+        response_data['redirect_url'] = redirect_url
 
-        self.request.response.setHeader('Content-Type',
-                                        'application/json;;charset="utf-8"')
-        return json.dumps(data)
+        return response_data
 
-    def __call__(self):
-        """default rendering for staticpages"""
-        return self.staticpages()
+    def __call__(self, single=False):
+        """rendering for staticpages or staticpages/single"""
+        try:
+            if single:
+                response_data = self.staticpages_single()
+            else:
+                response_data = self.staticpages()
+            self.request.response.setHeader('Content-Type',
+                                            'application/json;;charset="utf-8"'
+                                            )
+            self.request.response.setStatus(200)
+            return json.dumps(response_data)
+        except (KeyError, AttributeError, Unauthorized, TraversalError):
+            self.request.response.setStatus(400)
+            self.request.response.setHeader('Content-Type', 'application/json;'
+                                            ';charset="utf-8"')
+            return json.dumps({'errors': []})
+
+    def __call_single__(self):
+        """call staticpages/single renderer"""
+        return self.__call__(single=True)
 
     def __getitem__(self, name):
         """custom traversal to allow to render staticpages/single"""
         if name != "single":
             raise KeyError
-        else:
-            return self.staticpages_single
+        return self.__call_single__

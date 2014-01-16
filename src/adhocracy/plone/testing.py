@@ -15,6 +15,19 @@ class AdhocracyploneLayer(PloneSandboxLayer):
 
     def setUpZope(self, app, configurationContext):
         # Load ZCML
+        import plone.app.blocks
+        xmlconfig.file(
+            'configure.zcml',
+            plone.app.blocks,
+            context=configurationContext
+        )
+
+        import plone.app.contenttypes
+        xmlconfig.file(
+            'configure.zcml',
+            plone.app.contenttypes,
+            context=configurationContext
+        )
         import adhocracy.plone
         xmlconfig.file(
             'configure.zcml',
@@ -23,7 +36,7 @@ class AdhocracyploneLayer(PloneSandboxLayer):
         )
 
         # Install products that use an old-style initialize() function
-        #z2.installProduct(app, 'Products.PloneFormGen')
+        z2.installProduct(app, 'Products.DateRecurringIndex')
 
 #    def tearDownZope(self, app):
 #        # Uninstall products installed above
