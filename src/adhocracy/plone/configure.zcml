@@ -9,6 +9,8 @@
 
   <includeDependencies package="." />
   <include package=".browser" />
+  <include package=".operations" />
+  <include file="caching.zcml" />
 
   <genericsetup:registerProfile
       name="default"
@@ -17,6 +19,8 @@
       description="Installs the adhocracy.plone package"
       provides="Products.GenericSetup.interfaces.EXTENSION"
       />
-  <!-- -*- extra stuff goes here -*- -->
+
+  <!-- purge adapter  -->
+  <adapter factory=".purgeall.PurgeAllPaths" name="adhocracy.plone.purgeall" />
 
 </configure>

@@ -1,0 +1,36 @@
+<registry>
+
+    <record name="plone.caching.interfaces.ICacheSettings.operationMapping" interface="plone.caching.interfaces.ICacheSettings" field="operationMapping">
+        <value>
+            <element key="adhocracy.static_resource">adhocracy.plone.caching.StaticResource</element>
+        </value>
+    </record>
+
+    <record name="adhocracy.plone.caching.StaticResource.maxage">
+		<field type="plone.registry.field.Int">
+			<required>False</required>
+			<title>Maximum age</title>
+		</field>
+		<value>0</value>
+	</record>
+    <record name="adhocracy.plone.caching.StaticResource.smaxage">
+		<field type="plone.registry.field.Int">
+			<required>False</required>
+			<title>Proxy Maximum age</title>
+		</field>
+		<value>31536000</value>
+	</record>
+
+
+
+	<record name="adhocracy.plone.caching.StaticResource.adhocracy.static_resource.maxage">
+		<field ref="adhocracy.plone.caching.StaticResource.maxage"/>
+		<value>0</value>
+	</record>
+	<record name="adhocracy.plone.caching.StaticResource.adhocracy.static_resource.smaxage">
+		<field ref="adhocracy.plone.caching.StaticResource.smaxage"/>
+		<value>31536000</value>
+	</record>
+
+
+</registry>

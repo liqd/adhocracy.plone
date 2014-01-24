@@ -1,0 +1,32 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:cache="http://namespaces.zope.org/cache"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="plone.app.caching">
+
+    <!-- cache profiles -->
+    <genericsetup:registerProfile
+        name="with-caching-proxy-adhocracy.plone"
+        title="With caching proxy and adhocracy.plone support"
+        description="Settings useful for setups with a caching proxy such as Squid or Varnish"
+        directory="profiles/with-caching-proxy"
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        for="plone.app.caching.interfaces.ICacheProfiles"
+        />
+
+    <!-- ruleset types  -->
+    <cache:rulesetType
+        name="adhocracy.static_resource"
+        title="adhocracy rest api resource, needs manual purging."
+        description=""
+        />
+
+    <!-- rulsets -->
+    <cache:ruleset
+        ruleset="adhocracy.static_resource"
+        for=".browser.staticpages.StaticPagesView"
+    />
+
+</configure>
+
