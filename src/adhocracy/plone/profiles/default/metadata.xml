@@ -4,5 +4,6 @@
     <dependencies>
         <dependency>profile-plone.app.contenttypes:default</dependency>
         <dependency>profile-plone.app.blocks:default</dependency>
+        <dependency>profile-plone.app.caching:default</dependency>
     </dependencies>
 </metadata>

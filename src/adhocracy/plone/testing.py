@@ -40,7 +40,7 @@ class AdhocracyploneLayer(PloneSandboxLayer):
 
 #    def tearDownZope(self, app):
 #        # Uninstall products installed above
-#        z2.uninstallProduct(app, 'Products.PloneFormGen')
+        z2.uninstallProduct(app, 'Products.DateRecurringIndex')
 
     def setUpPloneSite(self, portal):
         applyProfile(portal, 'adhocracy.plone:default')

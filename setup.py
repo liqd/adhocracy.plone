@@ -45,6 +45,7 @@ setup(name='adhocracy.plone',
           'plone.api',
           'plone.app.contenttypes',
           'plone.app.blocks',
+          'plone.app.caching',
           # -*- Extra requirements: -*-
       ],
       extras_require={'test': ['plone.app.testing']},
