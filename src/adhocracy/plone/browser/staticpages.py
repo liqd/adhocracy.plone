@@ -94,6 +94,8 @@ class StaticPagesView(BrowserView):
             try:
                 response_data = query_items(self.context,
                                             '/'.join([lang, data['base']]))
+                if "title" in response_data:
+                    break
             except KeyError:
                 continue
         if data['langs'] == [] or response_data == {}:
