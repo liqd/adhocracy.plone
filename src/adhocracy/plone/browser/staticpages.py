@@ -135,6 +135,8 @@ class StaticPagesView(BrowserView):
                     item = self.context\
                         .restrictedTraverse("/".join([lang, data['path']]))
                     lang = lang
+                    if item is not None:
+                        break
                 except (KeyError, TraversalError):
                     pass
             if item is None:
