@@ -1,5 +1,8 @@
 <registry>
 
+    <record interface="adhocracy.plone.interfaces.IAdhocracyStaticPagesRootRegistry" field="roots">
+    </record>
+
     <record name="plone.caching.interfaces.ICacheSettings.operationMapping" interface="plone.caching.interfaces.ICacheSettings" field="operationMapping">
         <value>
             <element key="adhocracy.static_resource">adhocracy.plone.caching.StaticResource</element>

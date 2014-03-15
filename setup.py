@@ -43,15 +43,21 @@ setup(name='adhocracy.plone',
           'setuptools',
           'beautifulsoup4',
           'plone.api',
+          'plone.app.dexterity',
           'plone.app.contenttypes',
           'plone.app.blocks',
           'plone.app.caching',
           # -*- Extra requirements: -*-
       ],
-      extras_require={'test': ['plone.app.testing']},
+      extras_require={'test': ['ipdb',
+                               'plone.app.testing'
+                               ]
+                      },
       entry_points="""
       # -*- Entry points: -*-
       [z3c.autoinclude.plugin]
       target = plone
-      """
+      """,
+      setup_requires=["PasteScript"],
+      paster_plugins=["templer.localcommands"],
       )
