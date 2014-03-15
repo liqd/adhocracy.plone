@@ -19,7 +19,7 @@ class PurgeAllPaths(object):
         self.context = context
 
     def getRelativePaths(self):
-        return []
+        return ['/PURGE_ALL/']
 
     def getAbsolutePaths(self):
-        return ['/PURGE_ALL']
+        return ['']
