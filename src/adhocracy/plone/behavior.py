@@ -52,6 +52,6 @@ class AdhocracyStaticPagesRoot(object):
         context_path = self.context.absolute_url_path()
         portal = plone.api.portal.get()
         portal_path = portal.absolute_url_path()
-        root_path = context_path.lstrip(portal_path)
+        root_path = context_path.replace(portal_path, '', 1).lstrip('/')
         url = roots_dict.get(root_path, u'')
         return url.rstrip('/')
