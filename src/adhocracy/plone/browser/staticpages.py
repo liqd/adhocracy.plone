@@ -205,6 +205,11 @@ class StaticPagesView(BrowserView):
             tag = content_soup.find(id=id_) if content_soup else None
             if tag:
                 tag.extract()
+        remove_tags = ['script']
+        for tag in remove_tags:
+            tags_ = content_soup.find_all(tag) if content_soup else []
+            for tag_ in tags_:
+                tag_.extract()
         title_soup = content_soup.find(class_='documentFirstHeading')\
             if content_soup else None
         response_data['title'] = title_soup.extract().get_text().strip()\
