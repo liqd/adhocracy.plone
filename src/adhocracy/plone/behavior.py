@@ -12,7 +12,7 @@ from zope.component import adapts
 import plone.api
 
 
-class IAdhocracyStaticPagesRoot(INavigationRoot):
+class IAdhocracyStaticPagesRoot(interface.Interface):
 
     """StaticPages behavior.
 
@@ -28,7 +28,7 @@ class IAdhocracyStaticPagesRoot(INavigationRoot):
     )
 
 
-class IAdhocracyStaticPagesRootMarker(interface.Interface):
+class IAdhocracyStaticPagesRootMarker(INavigationRoot):
 
     """ StaticPage behavior marker interface. """
 
